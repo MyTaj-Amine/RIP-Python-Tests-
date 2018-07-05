@@ -1,25 +1,24 @@
 # - *- coding: utf- 8 - *-
 '''
-Created on 10/11/2015
-Modified on 2018/07/01
-
 @author: jcsombria
 '''
 import cherrypy
-import ujson
-import time
 import os
 
-from rip.RIPGeneric import RIPGeneric
 from rip.RIPMeta import *
+from rip.RIPGeneric import RIPGeneric
 
-class Root(object):
+class HttpServer(object):
+  '''
+  RIP Server implementation
+  '''
   exposed = True
-  control = RIPGeneric()
-  experiences = [
-    { 'id':'TestOK' },
-  ]
-  host = '< host_ip >:2055'
+
+  def __init__(self, control=RIPGeneric(), host='127.0.0.1', port=8080):
+    self.control = control
+    self.host = host
+    self.port = port
+    self.experiences = [{ 'id': control.name }]
 
   @cherrypy.expose
   def index(self, expId=None):
@@ -28,12 +27,15 @@ class Root(object):
     '''
     if expId is not None:
       if expId in [e['id'] for e in self.experiences]:
-        response = self.control.info()
+        response = self.control.info(self.getAddr())
       else:
         response = '{}'
     else:
       response = self.info()
     return response.encode("utf-8")
+
+  def getAddr(self):
+    return '%s:%s' % (self.host, self.port)
 
   @cherrypy.expose
   def SSE(self, expId=None):
@@ -43,7 +45,6 @@ class Root(object):
     cherrypy.response.headers['Content-Type'] = 'text/event-stream'
     cherrypy.response.headers['Cache-Control'] = 'no-cache'
     cherrypy.response.headers['Connection'] = 'keep-alive'
-
     return self.control.nextSample()
   SSE._cp_config = {'response.stream': True}
 
@@ -62,46 +63,46 @@ class Root(object):
     '''
     Build server info string
     '''
-    params_get_info = [
-      RIPParam(name='Accept',required='no',location='header',value='application/json'),
-      RIPParam(name='expId',required='no',location='query',type_='string'),
-    ]
-    get_info = RIPMethod(
-      url='http://%s/RIP' % self.host, 
+    meta = RIPExperienceList(self.experiences, [self.buildGetInfo()])
+    return str(meta)
+
+  def buildGetInfo(self):
+    return RIPMethod(
+      url='%s/RIP' % self.getAddr(),
       description='Retrieves information (variables and methods) of the experiences in the server',
       type_='GET',
-      params=params_get_info,
+      params=[
+        RIPParam(name='Accept',required='no',location='header',value='application/json'),
+        RIPParam(name='expId',required='no',location='query',type_='string'),
+      ],
       returns='application/json',
-      example='http://%s/RIP?expId=TestOK' % self.host
+      example='http://%s/RIP?expId=%s' % (self.getAddr(), self.control.name)
     )
-    meta = RIPExperienceList(self.experiences, [get_info])
-    return str(meta)
+
+  def start(self):
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    log_dir = os.path.join(base_dir, 'log')
+    access_log_file = os.path.join(log_dir, 'access.log')
+    error_log_file = os.path.join(log_dir, 'error.log')
+    cherrypy.config.update({
+      'server.socket_port': self.port,
+      'log.access_file' : access_log_file,
+      'log.errors_file' : error_log_file
+    })
+    config = {
+      '/': {
+        'tools.response_headers.on': True,
+        'tools.response_headers.headers': [
+          ('Content-Type', 'application/json'),
+          ('Access-Control-Allow-Origin', '*'),
+        ],
+        'tools.encode.on': True,
+        'tools.encode.encoding': 'utf-8',
+      },
+    }
+    cherrypy.quickstart(self, '/RIP', config)
 
 # --------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-  # Provides a relative log path from the original script path
-  # instead from the invocation path
-  base_dir = os.path.dirname(os.path.realpath(__file__))
-  log_dir = os.path.join(base_dir, 'log')
-  access_log_file = os.path.join(log_dir, 'access.log')
-  error_log_file = os.path.join(log_dir, 'error.log')
-  cherrypy.config.update({
-    'server.socket_port': 2055,
-    'log.access_file' : access_log_file,
-    'log.errors_file' : error_log_file
-  })
-  config = {
-    '/': {
-      'tools.sessions.on': True,
-      'tools.response_headers.on': True,
-      'tools.response_headers.headers': [
-        ('Content-Type', 'application/json'),
-        ('Access-Control-Allow-Origin', '*'),
-      ],
-      'tools.encode.on': True,
-      'tools.encode.encoding': 'utf-8',
-    },
-  }
-
-  cherrypy.quickstart(Root(), '/RIP', config)
+  HttpServer().start()

@@ -1,27 +1,36 @@
 '''
 @author: jcsombria
 '''
-import os.path
-import time
-
-from jsonrpc.JsonRpcServer import JsonRpcServer
-from jsonrpc.JsonRpcBuilder import JsonRpcBuilder
 from oct2py import octave
-from rip.RIPMeta import *
 from rip.RIPGeneric import RIPGeneric
-
-builder = JsonRpcBuilder()
 
 class RIPOctave(RIPGeneric):
   '''
   RIP Octave Adapter
   '''
 
-  def __init__(self, name='RIP Octave', description='An implementation of RIP for Octave'):
+  def __init__(self, name='Octave', description='An implementation of RIP to control Octave', authors='J. Chacon', keywords='Octave'):
     '''
     Constructor
     '''
-    super().__init__(name, description)
+    super().__init__(name, description, authors, keywords)
+
+    self.readables.append({
+        'name':'x',
+        'description':'Testing readable variable',
+        'type':'float',
+        'min':'-Inf',
+        'max':'Inf',
+        'precision':'0'
+    })
+    self.writables.append({
+        'name':'x',
+        'description':'Testing writable variable',
+        'type':'float',
+        'min':'-Inf',
+        'max':'Inf',
+        'precision':'0'
+    })
 
   def set(self, expid, variables, values):
     '''
@@ -53,10 +62,3 @@ class RIPOctave(RIPGeneric):
       ['time', 'x'],
       [self.sampler.lastTime(), 1]
     ]
-
-#  def eval(self, command):
-#    try:
-#      result = octave.eval(command)
-#    except:
-#      pass
-#    return result
