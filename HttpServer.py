@@ -61,6 +61,8 @@ class HttpServer(object):
     '''
     socket = cherrypy.request.body.fp
     message = socket.read()
+    if not self.control.running:
+        self.control.start()
     response = self.control.parse(message)
     return response.encode("utf-8")
 
@@ -90,6 +92,7 @@ class HttpServer(object):
     access_log_file = os.path.join(log_dir, 'access.log')
     error_log_file = os.path.join(log_dir, 'error.log')
     cherrypy.config.update({
+      'server.socket_host': '0.0.0.0',
       'server.socket_port': self.port,
       'log.access_file' : access_log_file,
       'log.errors_file' : error_log_file
