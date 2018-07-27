@@ -106,6 +106,8 @@ class HttpServer(object):
         ],
         'tools.encode.on': True,
         'tools.encode.encoding': 'utf-8',
+        # Avoid redirect when the URL does not have an ending '\'
+        'tools.trailing_slash.on': False,
       },
     }
     if enable_ssl:
