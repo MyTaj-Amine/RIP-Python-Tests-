@@ -11,4 +11,4 @@ if __name__ == '__main__':
       authors='D. Garcia, J. Chacon',
       keywords='Octave, Raspberry PI, Robot',
     ),
-  ).start()
+  ).start(enable_ssl=False)

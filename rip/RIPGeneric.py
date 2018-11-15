@@ -188,7 +188,7 @@ class RIPGeneric(JsonRpcServer):
       except:
         toReturn = 'ERROR'
       response = builder.response(result=toReturn, request_id='1')
-      yield 'data: %s\n\n' % ujson.dumps(response)
+      yield 'id: periodiclabdata\n data: %s\n\n' % ujson.dumps(response)
 
   def getValuesToNotify(self):
     return [

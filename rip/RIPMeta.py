@@ -69,7 +69,6 @@ class RIPVariable(RIPSerializable):
       'max': max_,
       'precision': precision,
     }
-
 class RIPVariablesList(RIPSerializable):
 
   def __init__(self, list_, methods, read_notwrite=False):
@@ -83,7 +82,7 @@ class RIPVariablesList(RIPSerializable):
     self.set('methods', [x.data for x in methods])
 
 class RIPParam(RIPSerializable):
-  
+
   def __init__(self, name, required, location, type_=None, subtype=None, value=None, elements=None):
     super().__init__()
     self.data = {
@@ -105,4 +104,3 @@ class RIPExperienceList(RIPSerializable):
     except:
       m = []
     self.data = { 'experiences': {'list': list_, 'methods': m} }
-    

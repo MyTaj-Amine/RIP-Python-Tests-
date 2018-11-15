@@ -1,3 +1,14 @@
 *.pyc
 .project
 .pydevproject
+
+# Local Virtual Environment
+venv_local/
+octave-workspace
+start.sh
+
+# Not tracked files
+client.html
+client/
+log/
+Examples
