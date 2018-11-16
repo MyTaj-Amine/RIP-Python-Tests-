@@ -1,2 +1,2 @@
 # rip-python-server
-RIP server - python implementation
+An implementation of the RIP protocol in Python
