@@ -1,4 +1,4 @@
-# This file contains the configuration of the RIP server applicationself.
+# This file contains the configuration of the RIP server application.
 config = {
   # TO DO: The server will listen to host:port
   'server': {
@@ -18,6 +18,24 @@ config = {
       'description': 'An implementation of RIP to control Octave',
       'authors': 'D. Garcia, J. Chacon',
       'keywords': 'Octave, Raspberry PI, Robot',
-    }
+      # Server readable objects
+      'readables': [{
+        'name':'x',
+        'description':'Testing readable variable',
+        'type':'float',
+        'min':'-Inf',
+        'max':'Inf',
+        'precision':'0'
+      }],
+      # Server writable objects
+      'writables': [{
+        'name':'x',
+        'description':'Testing readable variable',
+        'type':'float',
+        'min':'-Inf',
+        'max':'Inf',
+        'precision':'0'
+      }],
+    },
   }
 }

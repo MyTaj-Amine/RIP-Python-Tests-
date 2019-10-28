@@ -9,28 +9,38 @@ class RIPOctave(RIPGeneric):
   RIP Octave Adapter
   '''
 
-  def __init__(self, name='Octave', description='An implementation of RIP to control Octave', authors='J. Chacon', keywords='Octave'):
+  def __init__(self, info={}):
     '''
     Constructor
     '''
-    super().__init__(name, description, authors, keywords)
+    super().__init__(info)
 
-    self.readables.append({
+  def default_info(self):
+    '''
+    Default metadata.
+    '''
+    return {
+      'name': 'Octave',
+      'description': 'An implementation of RIP to control Octave',
+      'authors': 'D. Garcia, J. Chacon',
+      'keywords': 'Octave, Raspberry PI, Robot',
+      'readables': [{
         'name':'x',
         'description':'Testing readable variable',
         'type':'float',
         'min':'-Inf',
         'max':'Inf',
         'precision':'0'
-    })
-    self.writables.append({
+        }],
+      'writables': [{
         'name':'x',
-        'description':'Testing writable variable',
+        'description':'Testing readable variable',
         'type':'float',
         'min':'-Inf',
         'max':'Inf',
         'precision':'0'
-    })
+      }],
+    }
 
   def set(self, expid, variables, values):
     '''

@@ -14,27 +14,16 @@ class RIPGeneric(JsonRpcServer):
   RIP Server - Reference Implementation
   '''
 
-  def __init__(self, name='RIP Generic', description='Generic RIP Server Implementation.', authors='J. Chacon', keywords='RIP'):
+  def __init__(self, info={}):
     '''
     Constructor
     '''
-    super().__init__(name, description)
-
-    self.authors = authors
-    self.keywords = keywords
+    metadata = self._parse_info(info)
+    super().__init__(metadata['name'], metadata['description'])
+    self.metadata = metadata
     self.ssePeriod = 0.5
     self.sseRunning = False
     self._running = False
-    self.readables = [{
-        'name':'time',
-        'description':'Server time in seconds',
-        'type':'float',
-        'min':'0',
-        'max':'Inf',
-        'precision':'0'
-      },
-    ]
-    self.writables = []
     self.addMethods({
       'get': { 'description': 'To read server variables',
         'params': { 'expId': 'string', 'variables': '[string]' },
@@ -45,6 +34,32 @@ class RIPGeneric(JsonRpcServer):
         'implementation': self.set,
       },
     })
+
+  def default_info(self):
+    return {
+      'name':'RIP Generic',
+      'description':'Generic RIP Server Implementation.',
+      'authors': 'J. Chacon',
+      'keywords': 'Raspberry PI, RIP',
+      'readables': [{
+        'name':'time',
+        'description':'Server time in seconds',
+        'type':'float',
+        'min':'0',
+        'max':'Inf',
+        'precision':'0',
+      }],
+      'writables': [],
+    }
+
+  def _parse_info(self, info):
+    metadata = self.default_info()
+    for p in info:
+      try:
+        metadata[p] = info[p]
+      except:
+        print('[WARNING] Property: %s not specified. Setting default value.' % p)
+    return metadata
 
   def start(self):
     '''
@@ -81,16 +96,16 @@ class RIPGeneric(JsonRpcServer):
     info = RIPServerInfo(
       self.name,
       self.description,
-      authors=self.authors,
-      keywords=self.keywords
+      authors=self.metadata['authors'],
+      keywords=self.metadata['keywords']
     )
     readables = RIPVariablesList(
-      list_=self.readables,
+      list_=self.metadata['readables'],
       methods=[self.buildSSEGetInfo(address), self.buildPOSTGetInfo(address)],
       read_notwrite=True
     )
     writables = RIPVariablesList(
-      list_=self.writables,
+      list_=self.metadata['writables'],
       methods=[self.buildPOSTSetInfo(address)],
       read_notwrite=False
     )
@@ -108,7 +123,7 @@ class RIPGeneric(JsonRpcServer):
         RIPParam(name='variables',required='no',location='query',type_='array',subtype='string'),
       ],
       returns='text/event-stream',
-      example='%s/RIP/SSE?expId=%s' % (address, self.name),
+      example='%s/RIP/SSE?expId=%s' % (address, self.metadata['name']),
     )
 
   def buildPOSTGetInfo(self, address):
@@ -129,7 +144,7 @@ class RIPGeneric(JsonRpcServer):
       returns='application/json',
       example={ '%s/RIP/POST' % address: {
         'headers': {'Accept': 'application/json','Content-Type': 'application/json'},
-        'body': {'jsonrpc':'2.0', 'method':'get', 'params':['%s' % self.name, [r['name'] for r in self.readables]], 'id':'1'}
+        'body': {'jsonrpc':'2.0', 'method':'get', 'params':['%s' % self.metadata['name'], [r['name'] for r in self.metadata['readables']]], 'id':'1'}
       }}
     )
 
@@ -149,7 +164,7 @@ class RIPGeneric(JsonRpcServer):
     example_post_set = {
       '%s/RIP/POST' % address: {
         'headers': {'Accept': 'application/json','Content-Type': 'application/json'},
-        'body': {'jsonrpc':'2.0','method':'set','params':['%s' % self.name,[w['name'] for w in self.writables],['val' for w in self.writables]],'id':'1'}
+        'body': {'jsonrpc':'2.0','method':'set','params':['%s' % self.metadata['name'],[w['name'] for w in self.metadata['writables']],['val' for w in self.metadata['writables']]],'id':'1'}
       }
     }
     return RIPMethod(

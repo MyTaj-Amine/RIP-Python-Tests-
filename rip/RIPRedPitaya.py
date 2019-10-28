@@ -8,28 +8,25 @@ class RIPRedPitaya(RIPGeneric):
   RIP Implementation for Red Pitaya
   '''
 
-  def __init__(self, name='RedPitaya', description='An implementation of RIP to control Red Pitaya', authors='Amine', keywords='Red Pitaya'):
+  def __init__(self, info):
     '''
     Constructor
     '''
-    super().__init__(name, description, authors, keywords)
+    super().__init__(info)
 
-    self.readables.append({
-        'name':'x',
-        'description':'Testing readable variable',
-        'type':'float',
-        'min':'-Inf',
-        'max':'Inf',
-        'precision':'0'
-    })
-    self.writables.append({
-        'name':'x',
-        'description':'Testing writable variable',
-        'type':'float',
-        'min':'-Inf',
-        'max':'Inf',
-        'precision':'0'
-    })
+
+  def default_info(self):
+    '''
+    You can provide default metadata here. AppConfig will override this definition.
+    '''
+    return {
+      'name': 'RedPitaya',
+      'description': 'An implementation of RIP to control Red Pitaya',
+      'authors': 'Amine my-taj',
+      'keywords': 'Red Pitaya, Raspberry PI',
+      'readables': [],
+      'writables': [],
+    }
 
   def set(self, expid, variables, values):
     '''
@@ -48,6 +45,6 @@ class RIPRedPitaya(RIPGeneric):
 
   def getValuesToNotify(self):
     return [
-      ['time', 'x'],
-      [self.sampler.lastTime(), 1]
+      ['time'],
+      [self.sampler.lastTime()]
     ]

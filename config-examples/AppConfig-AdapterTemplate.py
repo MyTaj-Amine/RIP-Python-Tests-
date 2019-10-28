@@ -10,14 +10,10 @@ config = {
   # The 'impl' field should contain the name of the module (.py) and the
   # class that implement the control interface
   'control': {
-    'impl_module': 'RIPRedPitaya',
+    'impl_module': 'RIPAdapterTemplate',
     'info': {
-      'name': 'RedPitaya',
-      'description': 'An implementation of RIP to control Red Pitaya',
-      'authors': 'Amine my-taj',
-      'keywords': 'Red Pitaya, Raspberry PI',
-      'readables': [],
-      'writables': [],
-    }
+      'name': 'RIPRandom',
+      'description': 'A random numbers generator',
+    },
   }
 }
