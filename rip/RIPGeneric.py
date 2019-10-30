@@ -188,7 +188,19 @@ class RIPGeneric(JsonRpcServer):
     '''
     pass
 
-  def nextSample(self, wrap='data: %s\n\n'):
+  def _getReadables(self):
+    readables = []
+    for r in self.metadata['readables']:
+      readables.append(r['name'])
+    return readables
+
+  def _getWritables(self):
+    writables = []
+    for r in self.metadata['writables']:
+      writables.append(r['name'])
+    return writables
+
+  def nextSample(self):
     '''
     Retrieve the next periodic update
     '''
@@ -199,17 +211,37 @@ class RIPGeneric(JsonRpcServer):
     while self.sseRunning:
       self.sampler.wait()
       try:
+        self.preGetValuesToNotify()
         toReturn = self.getValuesToNotify()
+        self.postGetValuesToNotify()
       except:
         toReturn = 'ERROR'
-      response = builder.response(result=toReturn, request_id='1')
-      yield 'id: periodiclabdata\n data: %s\n\n' % ujson.dumps(response)
+      response = {"result":toReturn};
+      event = 'periodiclabdata'
+      id = round(self.sampler.time * 1000)
+      data = ujson.dumps(response)
+      yield 'event: %s\nid: %s\ndata: %s\n\n' % (event, id, data)
+
+  def preGetValuesToNotify(self):
+    '''
+    To do before obtaining values to notify
+    '''
+    pass
 
   def getValuesToNotify(self):
+    '''
+    Which values will be notified
+    '''
     return [
       [ 'time' ],
       [ self.sampler.lastTime() ]
     ]
+
+  def postGetValuesToNotify(self):
+    '''
+    To do after obtaining values to notify
+    '''
+    pass
 
 class Sampler(object):
 
