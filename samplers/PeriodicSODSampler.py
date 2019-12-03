@@ -4,7 +4,7 @@
 import time
 import random
 from .Samplers import PeriodicSampler as Periodic
-#from Samplers import PeriodicSampler
+
 
 class SamplerSOD(Periodic):
 
@@ -13,7 +13,6 @@ class SamplerSOD(Periodic):
     self.Ti = first
     self.next = self.Ti
     self.elapsed_time = 0
-
 
   def wait_first_sample(self):
     self.time = time.time() - self.t0
