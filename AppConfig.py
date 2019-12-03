@@ -10,13 +10,13 @@ config = {
   # The 'impl' field should contain the name of the module (.py) and the
   # class that implement the control interface
   'control': {
-    'impl_module': 'RIPGeneric',
+    'impl_module': 'PeriodicSendOnDelta',
     # Also, if the class name is not the same as the module name:
     #'impl_name': 'RIPOctave',
     'info': {
-      'name': 'RIP Generic',
-      'description': 'A generic implementation of RIP',
-      'authors': 'J. Chacon',
+      'name': 'Send on delta ',
+      'description': 'Exention of Rip Generic for sending event based on Delta',
+      'authors': 'J. Chacon, Amine ',
       'keywords': 'Raspberry PI, RIP',
       # Server readable objects
       'readables': [{

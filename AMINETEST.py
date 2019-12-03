@@ -6,7 +6,7 @@ import time
 from jsonrpc.JsonRpcServer import JsonRpcServer
 from jsonrpc.JsonRpcBuilder import JsonRpcBuilder
 from rip.RIPMeta import *
-
+import random
 builder = JsonRpcBuilder()
 
 class RIPGeneric(JsonRpcServer):
@@ -21,7 +21,10 @@ class RIPGeneric(JsonRpcServer):
     metadata = self._parse_info(info)
     super().__init__(metadata['name'], metadata['description'])
     self.metadata = metadata
-    self.ssePeriod = 5
+    self.ssePeriod = 15
+    self.sseThreshold = 1
+    self.sseFirst = 9
+    self.sseFirstConnect = False
     self.sseRunning = False
     self._running = False
     self.addMethods({
@@ -66,8 +69,9 @@ class RIPGeneric(JsonRpcServer):
     Iniatilizes the server. Any code meant to be run at init should be here.
     '''
     if not self.sseRunning:
-      self.sseRunning = True
-      self.sampler = Sampler(self.ssePeriod)
+        self.sseRunning = True
+        #self.sampler = Sampler(self.ssePeriod)
+        self.sampler = SamplerSOD(self.ssePeriod, self.sseFirst, self.sseThreshold)
     self._running = True
 
   @property
@@ -200,32 +204,84 @@ class RIPGeneric(JsonRpcServer):
       writables.append(r['name'])
     return writables
 
+  '''
+      The last periodic send data next sample
+   '''
+  #def nextSample(self):
+   # '''
+    #Retrieve the next periodic update
+   # '''
+    # TO DO: Remove this code and start when the first client arrives
+   # if not self.sseRunning:
+      #self.sseRunning = True
+      #self.sampler = Sampler(self.ssePeriod)
+      #self.sampler = PeriodicSODSampler.SODSampler(self.first_sample, self.ssePeriod, self.ssethreshold)
+
+    #while self.sseRunning:
+     # self.sampler.wait()
+      #try:
+       # self.preGetValuesToNotify()
+        #toReturn = self.getValuesToNotify()
+        #self.postGetValuesToNotify()
+      #except:
+       # toReturn = 'ERROR'
+      #response = {"result":toReturn};
+      #event = 'periodiclabdata'
+      #id = round(self.sampler.time * 1000)
+      #data = ujson.dumps(response)
+      #yield 'event: %s\nid: %s\ndata: %s\n\n' % (event, id, data)
+
   def nextSample(self):
     '''
     Retrieve the next periodic update
     '''
     if not self.sseRunning:
-      self.sseRunning = True
-      self.sampler = Sampler(self.ssePeriod)
+     self.sseRunning = True
+     self.sampler = SamplerSOD(self.ssePeriod, self.sseFirst, self.sseThreshold)
+
+    #self.sampler.wait_first_sample()
+    #try:
+      #firstSample = self.getValuesToNotify()
+    #except:
+      #firstSample = "ERROR first sample"
+    #response = {"First_sample result": firstSample};
+    #event = 'PeriodicSendOnDelta'
+    #id = round(self.sampler.time * 1000)
+    #data = ujson.dumps(response)
+    #yield 'event: %s\nid: %s\ndata: %s\n\n' % (event, id, data)
 
     while self.sseRunning:
-      self.sampler.wait()
-      try:
-        self.preGetValuesToNotify()
-        toReturn = self.getValuesToNotify()
-        self.postGetValuesToNotify()
-      except:
-        toReturn = 'ERROR'
-      response = {"result":toReturn};
-      event = 'periodiclabdata'
-      id = round(self.sampler.time * 1000)
-      data = ujson.dumps(response)
-      yield 'event: %s\nid: %s\ndata: %s\n\n' % (event, id, data)
+      if not self.sseFirstConnect:
+        self.sseFirstConnect = True
+        self.sampler.wait_first_sample()
+        try:
+          firstSample = self.getValuesToNotify()
+        except:
+         firstSample = "ERROR first sample"
+        response = {"First_sample result": firstSample};
+        event = 'PeriodicSendOnDelta'
+        id = round(self.sampler.time * 1000)
+        data = ujson.dumps(response)
+        yield 'event: %s\nid: %s\ndata: %s\n\n' % (event, id, data)
+      else:
+        self.sampler.wait()
+        try:
+          self.preGetValuesToNotify()
+          toReturn = self.getValuesToNotify()
+          self.postGetValuesToNotify()
+        except:
+          toReturn = 'ERROR'
+        response = {"result": toReturn};
+        event = 'PeriodicSendOnDelta'
+        id = round(self.sampler.time * 1000)
+        data = ujson.dumps(response)
+        yield 'event: %s\nid: %s\ndata: %s\n\n' % (event, id, data)
 
   def preGetValuesToNotify(self):
     '''
     To do before obtaining values to notify
     '''
+    #self.sampler.set_param()
     pass
 
   def getValuesToNotify(self):
@@ -267,3 +323,37 @@ class Sampler(object):
 
   def lastTime(self):
     return self.last
+
+
+class SamplerSOD(Sampler):
+
+  def __init__(self, period, first, threshold):
+    super().__init__(period)
+    self.Ti = first
+    self.d = threshold
+    self.lastparam = 2
+    self.next = self.Ti
+    #self.wait_first_sample()
+
+  def wait_first_sample(self):
+    self.time = time.time() - self.t0
+    self.last = self.time
+    self.next = self.time / self.Ti + self.Ti
+    interval = self.Ti - self.time % self.Ti
+    time.sleep(interval)
+
+  def set_param(self):
+    self.param = random.randint(0,10)
+    if abs(self.lastparam - self.param) > self.d:
+      return True
+    else:
+      return False
+
+  def temps_session(self):
+      temps_connection = time.time()- self.t0
+      if temps_connection > 40:
+        self.new = True
+      else:
+        self.new = False
+
+
