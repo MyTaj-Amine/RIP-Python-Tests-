@@ -12,11 +12,11 @@ class PeriodicSampler(object):
 
   def wait(self):
     # Wait until the next sampling time
-    self.last = self.time
-    self.time = time.time() - self.t0
     self.next = self.time / self.Ts + self.Ts
     interval = self.Ts - self.time % self.Ts
     time.sleep(interval)
+    self.time = time.time() - self.t0
+    self.last = self.time
 
   def reset(self):
     # Reset to the initial state

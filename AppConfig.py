@@ -14,7 +14,7 @@ config = {
     # Also, if the class name is not the same as the module name:
     #'impl_name': 'RIPOctave',
     'info': {
-      'name': 'Send on delta ',
+      'name': 'PeriodicSendOnDelta',
       'description': 'Exention of Rip Generic for sending event based on Delta',
       'authors': 'J. Chacon, Amine ',
       'keywords': 'Raspberry PI, RIP',

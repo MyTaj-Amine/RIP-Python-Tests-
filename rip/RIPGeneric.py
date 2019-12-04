@@ -21,7 +21,7 @@ class RIPGeneric(JsonRpcServer):
     metadata = self._parse_info(info)
     super().__init__(metadata['name'], metadata['description'])
     self.metadata = metadata
-    self.ssePeriod = 5
+    self.ssePeriod = 10
     self.sseRunning = False
     self._running = False
     self.addMethods({
@@ -242,28 +242,3 @@ class RIPGeneric(JsonRpcServer):
     To do after obtaining values to notify
     '''
     pass
-
-class Sampler(object):
-
-  def __init__(self, period):
-    self.Ts = period
-    self.reset()
-
-  def wait(self):
-    self.last = self.time
-    self.time = time.time() - self.t0
-    self.next = self.time / self.Ts + self.Ts
-    interval = self.Ts - self.time % self.Ts
-    time.sleep(interval)
-
-  def reset(self):
-    self.t0 = time.time()
-    self.time = 0
-    self.last = 0
-    self.next = self.Ts
-
-  def delta(self):
-    return self.time - self.last
-
-  def lastTime(self):
-    return self.last

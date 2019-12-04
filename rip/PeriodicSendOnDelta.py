@@ -13,14 +13,15 @@ class PeriodicSendOnDelta(RIPGeneric):
     Constructor
     '''
     super().__init__(info)
-    self.sseFirst = 4
+    self.sseFirst = 5
+    self.ssePeriod = 3
     self.sseFirstConnect = False
     self.meet_Condition = False
 
   def start(self):
     if not self.sseRunning:
       self.sseRunning = True
-      self.sampler = SamplerSOD(self.ssePeriod,self.sseFirst)
+      self.sampler = SamplerSOD(self.ssePeriod, self.sseFirst)
     self._running = True
 
   def nextSample(self):
@@ -59,18 +60,3 @@ class PeriodicSendOnDelta(RIPGeneric):
           id = round(self.sampler.time * 1000)
           data = ujson.dumps(response)
           yield 'event: %s\nid: %s\ndata: %s\n\n' % (event, id, data)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

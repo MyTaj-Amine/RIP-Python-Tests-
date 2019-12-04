@@ -15,11 +15,12 @@ class SamplerSOD(Periodic):
     self.elapsed_time = 0
 
   def wait_first_sample(self):
-    self.time = time.time() - self.t0
-    self.last = self.time
+    #self.time = time.time() - self.t0
     self.next = self.time / self.Ti + self.Ti
     interval = self.Ti - self.time % self.Ti
     time.sleep(interval)
+    self.time = time.time() - self.t0
+    self.last = self.time
 
   def set_param(self, d=2):
     lastparam = 2
@@ -28,11 +29,3 @@ class SamplerSOD(Periodic):
         return True
     else:
         return False
-
-  def connection_time(self):
-    limit = 20
-    self.elapsed_time = time.time() - self.t0
-    if elapsed_time > limit:
-      return True
-    else:
-      return False
