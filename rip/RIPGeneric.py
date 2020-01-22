@@ -6,6 +6,7 @@ import time
 from jsonrpc.JsonRpcServer import JsonRpcServer
 from jsonrpc.JsonRpcBuilder import JsonRpcBuilder
 from rip.RIPMeta import *
+import cherrypy
 
 builder = JsonRpcBuilder()
 
@@ -21,7 +22,7 @@ class RIPGeneric(JsonRpcServer):
     metadata = self._parse_info(info)
     super().__init__(metadata['name'], metadata['description'])
     self.metadata = metadata
-    self.ssePeriod = 10
+    self.ssePeriod = 0.5
     self.sseRunning = False
     self._running = False
     self.addMethods({

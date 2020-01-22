@@ -2,11 +2,14 @@
 '''
 @author: jcsombria
 '''
-import cherrypy
-import os
 
+import os
+import time
 from rip.RIPMeta import *
 from rip.RIPGeneric import RIPGeneric
+from rip.PeriodicSendOnDelta import PeriodicSendOnDelta
+import cherrypy
+
 
 class HttpServer(object):
   '''
@@ -16,10 +19,12 @@ class HttpServer(object):
 
   def __init__(self, control=RIPGeneric(), host='127.0.0.1', port=8080):
     self.control = control
+    self.implModue = PeriodicSendOnDelta()
     self.host = host
     self.port = port
     self.experiences = [{ 'id': control.name }]
     self.firstTime = False
+    self.numberConnections = 0
     self.connectedClients = 0
 
   @cherrypy.expose
@@ -44,14 +49,20 @@ class HttpServer(object):
     '''
     SSE - Connect to an experience's SSE channel to receive periodic updates
     '''
+    self.numberConnections += 1
+    print(f'Number of server connections: {self.numberConnections}')
     cherrypy.response.headers['Content-Type'] = 'text/event-stream'
     cherrypy.response.headers['Cache-Control'] = 'no-cache'
     cherrypy.response.headers['Connection'] = 'keep-alive'
+    cherrypy.response.cookie["userConnected"] = True
     # TO DO: stop when all clients are disconnected
     if not self.control.running:
         self.control.start()
     return self.control.nextSample()
+    #if not self.control.nextSample():
+        #return self.control.nextSample()
   SSE._cp_config = {'response.stream': True}
+
 
   @cherrypy.expose
   @cherrypy.tools.accept(media='application/json')
@@ -65,6 +76,7 @@ class HttpServer(object):
         self.control.start()
     response = self.control.parse(message)
     return response.encode("utf-8")
+
 
   def info(self):
     '''

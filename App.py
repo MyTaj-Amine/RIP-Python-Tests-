@@ -10,7 +10,6 @@ def load_control(control):
 
   info = config['control']['info']
   return RIPControl(info)
-
 if __name__ == "__main__":
   control = load_control(config['control'])
 
