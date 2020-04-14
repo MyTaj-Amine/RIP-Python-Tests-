@@ -10,14 +10,14 @@ config = {
   # The 'impl' field should contain the name of the module (.py) and the
   # class that implement the control interface
   'control': {
-    'impl_module': 'PeriodicSendOnDelta',
+    'impl_module': 'RIPGeneric',
     # Also, if the class name is not the same as the module name:
     #'impl_name': 'RIPOctave',
     'info': {
-      'name': 'PeriodicSendOnDelta',
-      'description': 'Exention of Rip Generic for sending event based on Delta',
-      'authors': 'J. Chacon, Amine ',
-      'keywords': 'Raspberry PI, RIP',
+      'name': 'RIP MATLAB',
+      'description': 'An implementation of RIP to control a MATLAB session',
+      'authors': 'J. Chacon',
+      'keywords': 'MATLAB, RIP',
       # Server readable objects
       'readables': [{
         'name':'time',

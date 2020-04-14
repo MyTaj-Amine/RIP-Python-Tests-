@@ -2,14 +2,16 @@
 '''
 @author: jcsombria
 '''
-
-import os
+import queue
 import time
-from rip.RIPMeta import *
-from rip.RIPGeneric import RIPGeneric
-from rip.PeriodicSendOnDelta import PeriodicSendOnDelta
 import cherrypy
+import os
+import random
+import binascii
+import ujson
 
+from rip.RIPGeneric import RIPGeneric
+from rip.core import *
 
 class HttpServer(object):
   '''
@@ -19,12 +21,11 @@ class HttpServer(object):
 
   def __init__(self, control=RIPGeneric(), host='127.0.0.1', port=8080):
     self.control = control
-    self.implModue = PeriodicSendOnDelta()
     self.host = host
     self.port = port
     self.experiences = [{ 'id': control.name }]
     self.firstTime = False
-    self.numberConnections = 0
+    self.ClientID = 0
     self.connectedClients = 0
 
   @cherrypy.expose
@@ -44,23 +45,44 @@ class HttpServer(object):
   def getAddr(self):
     return '%s:%s' % (self.host, self.port)
 
+
   @cherrypy.expose
   def SSE(self, expId=None):
     '''
     SSE - Connect to an experience's SSE channel to receive periodic updates
     '''
-    self.numberConnections += 1
-    print(f'Number of server connections: {self.numberConnections}')
     cherrypy.response.headers['Content-Type'] = 'text/event-stream'
     cherrypy.response.headers['Cache-Control'] = 'no-cache'
     cherrypy.response.headers['Connection'] = 'keep-alive'
-    cherrypy.response.cookie["userConnected"] = True
-    # TO DO: stop when all clients are disconnected
-    if not self.control.running:
-        self.control.start()
-    return self.control.nextSample()
-    #if not self.control.nextSample():
-        #return self.control.nextSample()
+    if expId is not None:
+      # if expId in [e['id'] for e in self.experiences]:
+      self.control.sseRunning = True
+      if len(self.control.clients) == 0:
+        self.control.sampler.reset()
+      if 'session_id' not in cherrypy.request.cookie:
+        file_name = str(cherrypy.session.id) + '.txt'
+        f = open(file_name, "a")
+        self.ClientID += 1
+        print(f'\nNew user connected({self.ClientID})')
+        cherrypy.session['ClientID'] = self.ClientID
+        print("user's sessionID: " + cherrypy.session.id)
+        self.control.clients.append(cherrypy.session.id)
+        evgen = self.control.connect()
+        evgen.userSession = cherrypy.session.id
+        evgen.userID = self.ClientID
+        # evgen.is_disconnected = False
+        f.close()
+        return evgen.next()
+      else:
+        print(f"\nUser number {cherrypy.session['ClientID']} is reconnected")
+        print(f"User's sessionID: "+ cherrypy.session.id)
+        evgen = self.control.connect()
+        lostevents = self.control.reconnect()
+        evgen.lostevents = lostevents
+        evgen.userSession = cherrypy.session.id
+        evgen.userID = cherrypy.session['ClientID']
+        return evgen.next()
+    return 'event: CLOSE\n\n'
   SSE._cp_config = {'response.stream': True}
 
 
@@ -76,7 +98,6 @@ class HttpServer(object):
         self.control.start()
     response = self.control.parse(message)
     return response.encode("utf-8")
-
 
   def info(self):
     '''
@@ -104,6 +125,8 @@ class HttpServer(object):
     access_log_file = os.path.join(log_dir, 'access.log')
     error_log_file = os.path.join(log_dir, 'error.log')
     cherrypy.config.update({
+      'tools.sessions.on': True,
+      'tools.proxy.on':True,
       'server.socket_host': '0.0.0.0',
       'server.socket_port': self.port,
       'log.access_file' : access_log_file,

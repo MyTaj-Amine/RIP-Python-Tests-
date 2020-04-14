@@ -11,3 +11,4 @@ start.sh
 # Not tracked files
 log/
 Examples
+.vscode

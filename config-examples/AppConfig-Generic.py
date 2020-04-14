@@ -1,6 +1,5 @@
 # This file contains the configuration of the RIP server application.
 config = {
-  # TO DO: The server will listen to host:port
   'server': {
     'host': '127.0.0.1',
     'port': 8080,
@@ -12,7 +11,7 @@ config = {
   'control': {
     'impl_module': 'RIPGeneric',
     # Also, if the class name is not the same as the module name:
-    #'impl_name': 'RIPOctave',
+    #'impl_name': 'RIPGeneric',
     'info': {
       'name': 'RIP Generic',
       'description': 'A generic implementation of RIP',

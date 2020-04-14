@@ -10,11 +10,13 @@ def load_control(control):
 
   info = config['control']['info']
   return RIPControl(info)
+
 if __name__ == "__main__":
   control = load_control(config['control'])
 
   HttpServer(
     host=config['server']['host'],
+
     port=config['server']['port'],
     control=control
   ).start(enable_ssl=False)

@@ -22,8 +22,7 @@ class MatlabConnector(object):
 
   def __init__(self):
     self.matlab = None
-    self.commandBuilder = CommandBuilder() 
-
+    self.commandBuilder = CommandBuilder()
 
   def connect(self):
     if(self.matlab == None):
@@ -31,7 +30,6 @@ class MatlabConnector(object):
 
   def disconnect(self):
     self.matlab.quit()
-
 
   def set(self, variables, values):
     if isinstance(variables, list):
@@ -48,7 +46,6 @@ class MatlabConnector(object):
         self.matlab.workspace[name] = value
       except:
         pass
-      
 
   def get(self, variables):
     if self._shouldGetResultAsDict():
@@ -79,11 +76,7 @@ class MatlabConnector(object):
       pass
     return result
 
-
-
-
 class CommandBuilder(object):
-
   # Command to add the EJS subblock to a Simulink model
   addEjsSubblockCommand = "Ejs_sub_name=['%s','/','Ejs_sub_','%s']; \n" \
     + "add_block('built-in/subsystem',Ejs_sub_name); \n" \
@@ -165,7 +158,7 @@ class CommandBuilder(object):
 
   def add_ejs_subblock(self, model):
     return self.commands['addEjsSubblockCommand'] % (model, model, model);
-	
+
   def add_pause_block(self, model):
     return "add_block('built-in/ground',[Ejs_sub_name,'/Gr1']); \n" \
       + "set_param([Ejs_sub_name,'/Gr1'],'Position', [30, 135, 70, 155]); \n" \
@@ -173,7 +166,7 @@ class CommandBuilder(object):
       + "comando=['set_param(''" + model + "'',','''','SimulationCommand','''',',','''','Pause','''',')']; \n" \
       + "set_param([Ejs_sub_name,'/Pause Simulink'],'MATLABFcn',comando,'OutputWidth','0','Position',[150, 125, 200, 165]); \n" \
       + "add_line(Ejs_sub_name,'Gr1/1','Pause Simulink/1'); \n"
-	
+
   def add_fixed_step_block(self, model, step):
     return  "set_param('" + model + "','FixedStep','" + step + "');" \
       + "add_block('built-in/digital clock',[Ejs_sub_name,'/fixedStep']);\n" \
@@ -182,5 +175,3 @@ class CommandBuilder(object):
       + "comando=['set_param(''" + model + "'',','''','SimulationCommand','''',',','''','Pause','''',')']; \n" \
       + "set_param([Ejs_sub_name,'/Pause Simulink'],'MATLABFcn',comando,'OutputWidth','0','Position',[150, 125, 200, 165]); \n" \
       + "add_line(Ejs_sub_name,'fixedStep/1','Pause Simulink/1'); \n"
-	
-

@@ -1,6 +1,5 @@
 # This file contains the configuration of the RIP server application.
 config = {
-  # TO DO: The server will listen to host:port
   'server': {
     'host': '127.0.0.1',
     'port': 8080,
