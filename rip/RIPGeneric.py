@@ -4,7 +4,9 @@
 from jsonrpc.JsonRpcServer import JsonRpcServer
 from jsonrpc.JsonRpcBuilder import JsonRpcBuilder
 from rip.core.RIPMeta import *
+from AppConfig import config
 import samplers
+import os
 import time
 import cherrypy
 
@@ -35,13 +37,12 @@ class RIPGeneric(JsonRpcServer):
         'implementation': self.set,
       },
     })
-    self.first_sample = 2
-    self.period = 0.5
-    self.threshold = 2
-    s = samplers.Signal()
-    #self.sampler = samplers.Periodic(self.first_sample, self.period, s)
-    self.sampler = samplers.SoDsampler(self.first_sample, self.period, s, self.threshold)
-
+    self.sampler_config = config['control']['info']['readables']
+    self.first_sample = float(self.sampler_config[2]['params'][0]['value'])
+    self.period = float(self.sampler_config[2]['params'][1]['value'])
+    self.threshold = float(self.sampler_config[2]['params'][3]['value'])
+    self.s = samplers.Signal()
+    self.sampling_method()
 
   def default_info(self):
     return {
@@ -84,7 +85,16 @@ class RIPGeneric(JsonRpcServer):
   def running(self):
     pass
 
-  @cherrypy.expose
+  def sampling_method(self):
+      self.sampling_method= self.sampler_config[1]['value']
+      if self.sampling_method == 'PeriodicSampler':
+           self.sampler = samplers.Periodic(self.first_sample, self.period,  self.s)
+      elif self.sampling_method == 'PeriodicSoD':
+          self.sampler = samplers.SoDsampler(self.first_sample, self.period,  self.s, self.threshold)
+      else:
+          print('sampling method dont found ')
+
+
   def connect(self):
     #if len(self.clients) == 0:
     if self.sampler.steps == 0:
@@ -95,10 +105,11 @@ class RIPGeneric(JsonRpcServer):
     self.sampler.register(evgen)
     return evgen
 
-
+  @cherrypy.expose
   def reconnect(self):
     file_name = str(cherrypy.session.id) + '.txt'
-    f = open(file_name, "r")
+    filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
+    f = open(filepath, "r")
     content = f.read()
     f.close()
     return content
@@ -265,11 +276,13 @@ class EventGenerator(object):
           yield self.Eventosend
         else:
           file_name = str(self.userSession) + '.txt'
-          f = open(file_name, "a")
+          filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
+          f = open(filepath, "a")
           f.write(self.Eventosend)
       except:
           file_name = str(self.userSession) + '.txt'
-          f = open(file_name, "a")
+          filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
+          f = open(filepath, "a")
           f.write(self.Eventosend)
           f.close()
           self.is_disconnected = True

@@ -34,7 +34,7 @@ config = {
             'precision': '0'
       }],
       # Server writable objects
-      'writables': [
+      'writables': [{
         'name': 'params',
         'description': 'PID params: kp, ki, kd, u_eq',
         'type': 'array',

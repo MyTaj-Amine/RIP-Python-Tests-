@@ -61,7 +61,8 @@ class HttpServer(object):
         self.control.sampler.reset()
       if 'session_id' not in cherrypy.request.cookie:
         file_name = str(cherrypy.session.id) + '.txt'
-        f = open(file_name, "a")
+        filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
+        f = open(filepath, "a")
         self.ClientID += 1
         print(f'\nNew user connected({self.ClientID})')
         cherrypy.session['ClientID'] = self.ClientID

@@ -26,7 +26,6 @@ class Sampler(object):
       except:
         pass
 
-  @cherrypy.expose
   def start(self):
     self.running = True
     while self.running:
@@ -97,6 +96,8 @@ class PeriodicSoD(PeriodicSampler):
     super().__init__(first_sample, period, signal)
     self.threshold = threshold
     self.firstStep = True
+
+# change this condition
 
   def condition(self):
     lastparam = 2
