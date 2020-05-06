@@ -2,7 +2,6 @@
 '''
 @author: jcsombria
 '''
-import queue
 import time
 import cherrypy
 import os
@@ -45,21 +44,23 @@ class HttpServer(object):
   def getAddr(self):
     return '%s:%s' % (self.host, self.port)
 
-
   @cherrypy.expose
   def SSE(self, expId=None):
     '''
     SSE - Connect to an experience's SSE channel to receive periodic updates
     '''
+    self.connectedClients += 1
     cherrypy.response.headers['Content-Type'] = 'text/event-stream'
     cherrypy.response.headers['Cache-Control'] = 'no-cache'
     cherrypy.response.headers['Connection'] = 'keep-alive'
     if expId is not None:
       # if expId in [e['id'] for e in self.experiences]:
       self.control.sseRunning = True
-      if len(self.control.clients) == 0:
-        self.control.sampler.reset()
-      if 'session_id' not in cherrypy.request.cookie:
+      #if len(self.control.clients) == 0:
+        #self.control.sampler.reset()
+      #if 'session_id' in cherrypy.request.cookie:
+      #if not cherrypy.request.cookie:
+      if self.connectedClients == 1 :
         file_name = str(cherrypy.session.id) + '.txt'
         filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
         f = open(filepath, "a")
@@ -71,12 +72,11 @@ class HttpServer(object):
         evgen = self.control.connect()
         evgen.userSession = cherrypy.session.id
         evgen.userID = self.ClientID
-        # evgen.is_disconnected = False
-        f.close()
+        #f.close()
         return evgen.next()
       else:
         print(f"\nUser number {cherrypy.session['ClientID']} is reconnected")
-        print(f"User's sessionID: "+ cherrypy.session.id)
+        print(f"User's sessionID: " + cherrypy.session.id)
         evgen = self.control.connect()
         lostevents = self.control.reconnect()
         evgen.lostevents = lostevents
@@ -85,7 +85,6 @@ class HttpServer(object):
         return evgen.next()
     return 'event: CLOSE\n\n'
   SSE._cp_config = {'response.stream': True}
-
 
   @cherrypy.expose
   @cherrypy.tools.accept(media='application/json')

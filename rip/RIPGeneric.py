@@ -37,12 +37,10 @@ class RIPGeneric(JsonRpcServer):
         'implementation': self.set,
       },
     })
-    self.sampler_config = config['control']['info']['readables']
-    self.first_sample = float(self.sampler_config[2]['params'][0]['value'])
-    self.period = float(self.sampler_config[2]['params'][1]['value'])
-    self.threshold = float(self.sampler_config[2]['params'][3]['value'])
-    self.s = samplers.Signal()
+    self.variable_config = config['control']['info']['readables']
+    self.general_config = config['control']['info']['sampling_methods']
     self.sampling_method()
+
 
   def default_info(self):
     return {
@@ -86,13 +84,20 @@ class RIPGeneric(JsonRpcServer):
     pass
 
   def sampling_method(self):
-      self.sampling_method= self.sampler_config[1]['value']
+      self.sampling_method = self.variable_config[0]['sampling']['type']
       if self.sampling_method == 'PeriodicSampler':
-           self.sampler = samplers.Periodic(self.first_sample, self.period,  self.s)
+        self.first_sample =  float(self.general_config['PeriodicSampler']['first_sampling'])
+        self.period = float(self.general_config['PeriodicSampler']['period'])
+        self.s = samplers.Signal()
+        self.sampler = samplers.Periodic(self.first_sample, self.period,  self.s)
       elif self.sampling_method == 'PeriodicSoD':
-          self.sampler = samplers.SoDsampler(self.first_sample, self.period,  self.s, self.threshold)
+        self.first_sample = float(self.general_config['PeriodicSendOnDelta']['first_sampling'])
+        self.period = float(self.general_config['PeriodicSendOnDelta']['period'])
+        self.s = samplers.Signal()
+        self.threshold =  float(self.variable_config[0]['sampling']['params']['delta'])
+        self.sampler = samplers.SoDsampler(self.first_sample, self.period,  self.s, self.threshold)
       else:
-          print('sampling method dont found ')
+          print('sampling method dont found')
 
 
   def connect(self):
@@ -243,14 +248,13 @@ class EventGenerator(object):
 
   def __init__(self):
     self.event = threading.Event()
-    self.control= RIPGeneric()
+    #self.control= RIPGeneric()
     self.Eventosend = ''
     self.lostevents = ''
     self.is_disconnected = False
     self.userID = 0
     self.userSession = ''
     self.afterDiscon = True
-
 
   def update(self, data):
     self.data = data
@@ -279,6 +283,7 @@ class EventGenerator(object):
           filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
           f = open(filepath, "a")
           f.write(self.Eventosend)
+          f.close()
       except:
           file_name = str(self.userSession) + '.txt'
           filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)

@@ -90,6 +90,7 @@ class PeriodicSampler(Sampler):
     # Last sampling time
     return self.last
 
+
 class PeriodicSoD(PeriodicSampler):
 
   def __init__(self, first_sample, period, signal, threshold):
@@ -98,7 +99,6 @@ class PeriodicSoD(PeriodicSampler):
     self.firstStep = True
 
 # change this condition
-
   def condition(self):
     lastparam = 2
     param = random.randint(1, 7)
