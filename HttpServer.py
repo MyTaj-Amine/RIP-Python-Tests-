@@ -56,11 +56,10 @@ class HttpServer(object):
     if expId is not None:
       # if expId in [e['id'] for e in self.experiences]:
       self.control.sseRunning = True
-      #if len(self.control.clients) == 0:
-        #self.control.sampler.reset()
+      if len(self.control.clients) == 0:
+        self.control.sampler.reset()
       #if 'session_id' in cherrypy.request.cookie:
-      #if not cherrypy.request.cookie:
-      if self.connectedClients == 1 :
+      if not cherrypy.request.cookie:
         file_name = str(cherrypy.session.id) + '.txt'
         filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
         f = open(filepath, "a")
