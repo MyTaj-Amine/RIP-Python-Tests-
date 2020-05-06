@@ -49,7 +49,6 @@ class HttpServer(object):
     '''
     SSE - Connect to an experience's SSE channel to receive periodic updates
     '''
-    self.connectedClients += 1
     cherrypy.response.headers['Content-Type'] = 'text/event-stream'
     cherrypy.response.headers['Cache-Control'] = 'no-cache'
     cherrypy.response.headers['Connection'] = 'keep-alive'
