@@ -26,7 +26,7 @@ config = {
         },
         'PeriodicSendOnDelta': {
           'first_sampling': '5',
-          'period': '0.5',
+          'period': '2',
         }
       },
       # Server readable objects

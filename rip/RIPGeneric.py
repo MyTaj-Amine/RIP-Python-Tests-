@@ -112,9 +112,10 @@ class RIPGeneric(JsonRpcServer):
 
   @cherrypy.expose
   def reconnect(self):
-    file_name = str(cherrypy.session.id) + '.txt'
-    filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
-    f = open(filepath, "r")
+    fileId = cherrypy.request.cookie['fileId'].value
+    file_name = str(fileId) + '.txt'
+    #filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
+    f = open(file_name, "r")
     content = f.read()
     f.close()
     return content
@@ -243,22 +244,22 @@ class RIPGeneric(JsonRpcServer):
 
 
 import threading
-
 class EventGenerator(object):
 
   def __init__(self):
     self.event = threading.Event()
-    #self.control= RIPGeneric()
     self.Eventosend = ''
     self.lostevents = ''
     self.is_disconnected = False
     self.userID = 0
     self.userSession = ''
-    self.afterDiscon = True
+    self.reconnect = False
+    self.resend = True
 
   def update(self, data):
     self.data = data
     self.event.set()
+
 
   def next(self):
     while True:
@@ -272,24 +273,25 @@ class EventGenerator(object):
       data = ujson.dumps(result)
       self.event.clear()
       self.Eventosend = 'event: %s\nid: %s\ndata: %s\n\n' % (eventname, id, data)
-      if self.afterDiscon:
+      if self.resend:
           yield self.lostevents
-          self.afterDiscon = False
+          file_name = str(self.userSession) + '.txt'
+          f = open(file_name, "w")
+          f.close()
+          self.resend = False
+          self.reconnect = False
       try:
         if not self.is_disconnected:
           yield self.Eventosend
         else:
           file_name = str(self.userSession) + '.txt'
-          filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
-          f = open(filepath, "a")
+          f = open(file_name, "a")
           f.write(self.Eventosend)
           f.close()
       except:
-          file_name = str(self.userSession) + '.txt'
-          filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
-          f = open(filepath, "a")
-          f.write(self.Eventosend)
-          f.close()
+        print(f'\nUser{self.userID} disconnected')
+        print("User's sessionID :" + self.userSession)
+        if not self.reconnect:
           self.is_disconnected = True
-          print(f'\nUser {self.userID} disconnected')
-          print("User's sessionID :" + self.userSession)
+          print (self.is_disconnected)
+          #self.reconnect = False

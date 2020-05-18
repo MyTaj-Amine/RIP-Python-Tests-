@@ -55,32 +55,39 @@ class HttpServer(object):
     if expId is not None:
       # if expId in [e['id'] for e in self.experiences]:
       self.control.sseRunning = True
-      if len(self.control.clients) == 0:
-        self.control.sampler.reset()
+      #if len(self.control.clients) == 0:
+        #self.control.sampler.reset()
       #if 'session_id' in cherrypy.request.cookie:
       if not cherrypy.request.cookie:
-        file_name = str(cherrypy.session.id) + '.txt'
-        filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
-        f = open(filepath, "a")
         self.ClientID += 1
-        print(f'\nNew user connected({self.ClientID})')
-        cherrypy.session['ClientID'] = self.ClientID
-        print("user's sessionID: " + cherrypy.session.id)
-        self.control.clients.append(cherrypy.session.id)
+        Id = cherrypy.session.id
+        cherrypy.response.cookie['fileId'] = Id
+        file_name = str(Id) + '.txt'
+        # filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
+        f = open(file_name, "a")
+        print("New user({})connected".format(self.ClientID))
+        print("user's sessionID: " + Id)
         evgen = self.control.connect()
-        evgen.userSession = cherrypy.session.id
+        evgen.userSession = Id
         evgen.userID = self.ClientID
-        #f.close()
+        f.close()
         return evgen.next()
       else:
-        print(f"\nUser number {cherrypy.session['ClientID']} is reconnected")
-        print(f"User's sessionID: " + cherrypy.session.id)
-        evgen = self.control.connect()
+        genId = 0
+        genSession = ""
+        for gen in self.control.sampler.observers:
+          if gen.userSession == cherrypy.request.cookie['fileId'].value:
+            genId = gen.userID
+            genSession = gen.userSession
+        print("User({})reconnected".format(self.ClientID))
+        print(genSession)
+        eventGen = self.control.sampler.observers[genId-1]
         lostevents = self.control.reconnect()
-        evgen.lostevents = lostevents
-        evgen.userSession = cherrypy.session.id
-        evgen.userID = cherrypy.session['ClientID']
-        return evgen.next()
+        eventGen.is_disconnected = False
+        eventGen.resend = True
+        eventGen.reconnect = True
+        eventGen.lostevents = lostevents
+        return eventGen.next()
     return 'event: CLOSE\n\n'
   SSE._cp_config = {'response.stream': True}
 
