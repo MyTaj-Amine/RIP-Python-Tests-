@@ -34,7 +34,7 @@ class Sampler(object):
       self.notify(data)
       self.wait()
       #print(self.steps)
-      print(self.observers)
+      #print(self.observers)
 
   def stop(self):
     self.running = False

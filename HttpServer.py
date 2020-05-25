@@ -1,4 +1,4 @@
-# - *- coding: utf- 8 - *-
+# - *- coding: utf- 8 - *
 '''
 @author: jcsombria
 '''
@@ -55,9 +55,6 @@ class HttpServer(object):
     if expId is not None:
       # if expId in [e['id'] for e in self.experiences]:
       self.control.sseRunning = True
-      #if len(self.control.clients) == 0:
-        #self.control.sampler.reset()
-      #if 'session_id' in cherrypy.request.cookie:
       if not cherrypy.request.cookie:
         self.ClientID += 1
         Id = cherrypy.session.id
@@ -65,12 +62,12 @@ class HttpServer(object):
         file_name = str(Id) + '.txt'
         # filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
         f = open(file_name, "a")
+        f.close()
         print("New user({})connected".format(self.ClientID))
         print("user's sessionID: " + Id)
         evgen = self.control.connect()
-        evgen.userSession = Id
         evgen.userID = self.ClientID
-        f.close()
+        evgen.userSession = Id
         return evgen.next()
       else:
         genId = 0
@@ -79,18 +76,20 @@ class HttpServer(object):
           if gen.userSession == cherrypy.request.cookie['fileId'].value:
             genId = gen.userID
             genSession = gen.userSession
-        print("User({})reconnected".format(self.ClientID))
-        print(genSession)
-        eventGen = self.control.sampler.observers[genId-1]
-        lostevents = self.control.reconnect()
-        eventGen.is_disconnected = False
-        eventGen.resend = True
-        eventGen.reconnect = True
-        eventGen.lostevents = lostevents
-        return eventGen.next()
+        print("User({})reconnected".format(genId))
+        print("UserSession: {}". format(genSession))
+        if genId == 0:
+          return "The server is restarted, Close your browser and Try again "
+        else:
+          eventGen = self.control.sampler.observers[genId - 1]
+          lostevents = self.control.reconnect()
+          eventGen.lostevents = lostevents
+          eventGen.sendBack = True
+          eventGen.is_disconnected = False
+          #eventGen.reconnect = True
+          return eventGen.next()
     return 'event: CLOSE\n\n'
   SSE._cp_config = {'response.stream': True}
-
   @cherrypy.expose
   @cherrypy.tools.accept(media='application/json')
   def POST(self):

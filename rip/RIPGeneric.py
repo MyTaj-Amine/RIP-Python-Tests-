@@ -101,7 +101,6 @@ class RIPGeneric(JsonRpcServer):
 
 
   def connect(self):
-    #if len(self.clients) == 0:
     if self.sampler.steps == 0:
       self.sampler.reset()
       sampler = threading.Thread(target=lambda: self.sampler.start())
@@ -242,7 +241,6 @@ class RIPGeneric(JsonRpcServer):
       writables.append(r['name'])
     return writables
 
-
 import threading
 class EventGenerator(object):
 
@@ -250,16 +248,16 @@ class EventGenerator(object):
     self.event = threading.Event()
     self.Eventosend = ''
     self.lostevents = ''
-    self.is_disconnected = False
-    self.userID = 0
     self.userSession = ''
-    self.reconnect = False
-    self.resend = True
+    self.userID = 0
+    self.is_disconnected = False
+    self.sendBack = False
+    #self.reconnect = False
+
 
   def update(self, data):
     self.data = data
     self.event.set()
-
 
   def next(self):
     while True:
@@ -273,13 +271,13 @@ class EventGenerator(object):
       data = ujson.dumps(result)
       self.event.clear()
       self.Eventosend = 'event: %s\nid: %s\ndata: %s\n\n' % (eventname, id, data)
-      if self.resend:
+      # Send Back lost events
+      if self.sendBack:
           yield self.lostevents
           file_name = str(self.userSession) + '.txt'
           f = open(file_name, "w")
           f.close()
-          self.resend = False
-          self.reconnect = False
+          self.sendBack = False
       try:
         if not self.is_disconnected:
           yield self.Eventosend
@@ -289,9 +287,10 @@ class EventGenerator(object):
           f.write(self.Eventosend)
           f.close()
       except:
-        print(f'\nUser{self.userID} disconnected')
+        file_name = str(self.userSession) + '.txt'
+        f = open(file_name, "a")
+        f.write(self.Eventosend)
+        f.close()
+        print("User{} disconnected".format(self.userID))
         print("User's sessionID :" + self.userSession)
-        if not self.reconnect:
-          self.is_disconnected = True
-          print (self.is_disconnected)
-          #self.reconnect = False
+        self.is_disconnected = True
