@@ -6,11 +6,21 @@ import time
 import cherrypy
 
 class Signal(object):
+  '''
+  A Signal that can be sampled
+  '''
 
   def sample(self):
-    return random.random()
+    '''
+    Get the instantaneous value of the signal
+    '''
+    return 5*random.random()
 
 class Sampler(object):
+  '''
+  An abstract Sampler
+  '''
+
   def __init__(self, signal):
     self.signal = signal
     self.observers = []
@@ -18,6 +28,12 @@ class Sampler(object):
 
   def register(self, o):
     self.observers.append(o)
+  
+  def remove(o):
+    try: 
+      self.observers.remove(o)
+    except:
+      pass
 
   def notify(self, data):
     for o in self.observers:
@@ -33,8 +49,6 @@ class Sampler(object):
       data = self.signal.sample()
       self.notify(data)
       self.wait()
-      #print(self.steps)
-      #print(self.observers)
 
   def stop(self):
     self.running = False
@@ -46,7 +60,6 @@ class PeriodicSampler(Sampler):
 
   def __init__(self, first_sample, period, signal):
     super().__init__(signal)
-    self.Ti = first_sample
     self.Ts = period
     self.reset()
 
@@ -59,18 +72,11 @@ class PeriodicSampler(Sampler):
 
   def wait(self):
     # Wait until the next sampling time
-    if self.steps > 1:
-      self.next = self.time / self.Ts + self.Ts
-      interval = self.Ts - self.time % self.Ts
-      time.sleep(interval)
-      self.time = time.time() - self.t0
-      self.last = self.time
-    else:
-      self.next = self.time / self.Ti + self.Ti
-      interval = self.Ti - self.time % self.Ts
-      time.sleep(interval)
-      self.time = time.time() - self.t0
-      self.last = self.time
+    self.next = self.time / self.Ts + self.Ts
+    interval = self.Ts - self.time % self.Ts
+    time.sleep(interval)
+    self.time = time.time() - self.t0
+    self.last = self.time
 
   def sample(self):
     self.signal.sample()
@@ -98,16 +104,9 @@ class PeriodicSoD(PeriodicSampler):
     self.threshold = threshold
     self.firstStep = True
 
-# change this condition
   def condition(self):
-    lastparam = 2
-    param = random.randint(1, 7)
-    if abs(lastparam - param) < self.threshold:
-      #print('\nCondition satisfied')
-      return True
-    else:
-     # print('\ncondition not satisfied')
-      return False
+    sample = self.signal.sample()
+    return abs(sample - self.lastSample) > self.threshold
 
   def wait(self):
     event = False
@@ -116,6 +115,7 @@ class PeriodicSoD(PeriodicSampler):
           if self.firstStep:
               event = True
               self.firstStep = False
+              self.lastSample = self.signal.sample()
           else:
               event = self.condition()
       except:

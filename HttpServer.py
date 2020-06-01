@@ -26,6 +26,7 @@ class HttpServer(object):
     self.firstTime = False
     self.ClientID = 0
     self.connectedClients = 0
+    self.sessions = {}
 
   @cherrypy.expose
   def index(self, expId=None):
@@ -55,41 +56,18 @@ class HttpServer(object):
     if expId is not None:
       # if expId in [e['id'] for e in self.experiences]:
       self.control.sseRunning = True
-      if not cherrypy.request.cookie:
-        self.ClientID += 1
-        Id = cherrypy.session.id
-        cherrypy.response.cookie['fileId'] = Id
-        file_name = str(Id) + '.txt'
-        # filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
-        f = open(file_name, "a")
-        f.close()
-        print("New user({})connected".format(self.ClientID))
-        print("user's sessionID: " + Id)
-        evgen = self.control.connect()
-        evgen.userID = self.ClientID
-        evgen.userSession = Id
-        return evgen.next()
+      previous_session = self.sessions.get(cherrypy.session.id)
+      print(cherrypy.session.id)
+      if not previous_session:
+        self.sessions[cherrypy.session.id] = cherrypy.request
+        cherrypy.session['dummy'] = 'dummy' # Force cherrypy to save the session
       else:
-        genId = 0
-        genSession = ""
-        for gen in self.control.sampler.observers:
-          if gen.userSession == cherrypy.request.cookie['fileId'].value:
-            genId = gen.userID
-            genSession = gen.userSession
-        print("User({})reconnected".format(genId))
-        print("UserSession: {}". format(genSession))
-        if genId == 0:
-          return "The server is restarted, Close your browser and Try again "
-        else:
-          eventGen = self.control.sampler.observers[genId - 1]
-          lostevents = self.control.reconnect()
-          eventGen.lostevents = lostevents
-          eventGen.sendBack = True
-          eventGen.is_disconnected = False
-          #eventGen.reconnect = True
-          return eventGen.next()
+        previous_session.close()
+      evgen = self.control.connect(cherrypy.session.id)
+      return evgen.start()
     return 'event: CLOSE\n\n'
   SSE._cp_config = {'response.stream': True}
+
   @cherrypy.expose
   @cherrypy.tools.accept(media='application/json')
   def POST(self):
@@ -130,6 +108,9 @@ class HttpServer(object):
     error_log_file = os.path.join(log_dir, 'error.log')
     cherrypy.config.update({
       'tools.sessions.on': True,
+      'tools.sessions.storage_type': 'file',
+      'tools.sessions.storage_path': './sessions',
+      'tools.sessions.timeout': 120,
       'tools.proxy.on':True,
       'server.socket_host': '0.0.0.0',
       'server.socket_port': self.port,

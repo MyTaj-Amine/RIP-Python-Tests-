@@ -3,12 +3,12 @@
 '''
 from jsonrpc.JsonRpcServer import JsonRpcServer
 from jsonrpc.JsonRpcBuilder import JsonRpcBuilder
-from rip.core.RIPMeta import *
+from rip.core import RIPMeta, EventGenerator, EventProxy
 from AppConfig import config
 import samplers
 import os
 import time
-import cherrypy
+import threading
 
 builder = JsonRpcBuilder()
 
@@ -100,24 +100,20 @@ class RIPGeneric(JsonRpcServer):
           print('sampling method dont found')
 
 
-  def connect(self):
+  def connect(self, session):
     if self.sampler.steps == 0:
       self.sampler.reset()
       sampler = threading.Thread(target=lambda: self.sampler.start())
       sampler.start()
-    evgen = EventGenerator()
-    self.sampler.register(evgen)
+    proxy = None
+    for o in self.sampler.observers:
+      if session == o.session:
+        proxy = o
+    if not proxy:
+      proxy = EventProxy(session)
+      self.sampler.register(proxy)
+    evgen = EventGenerator(proxy)
     return evgen
-
-  @cherrypy.expose
-  def reconnect(self):
-    fileId = cherrypy.request.cookie['fileId'].value
-    file_name = str(fileId) + '.txt'
-    #filepath = os.path.join('C:/Users/34603/PycharmProjects/rip-python-server-NewVersion/log', file_name)
-    f = open(file_name, "r")
-    content = f.read()
-    f.close()
-    return content
 
   def info(self, address='127.0.0.1:8080'):
     '''
@@ -240,57 +236,3 @@ class RIPGeneric(JsonRpcServer):
     for r in self.metadata['writables']:
       writables.append(r['name'])
     return writables
-
-import threading
-class EventGenerator(object):
-
-  def __init__(self):
-    self.event = threading.Event()
-    self.Eventosend = ''
-    self.lostevents = ''
-    self.userSession = ''
-    self.userID = 0
-    self.is_disconnected = False
-    self.sendBack = False
-    #self.reconnect = False
-
-
-  def update(self, data):
-    self.data = data
-    self.event.set()
-
-  def next(self):
-    while True:
-      self.event.wait()
-      # Gather result
-      timestamp = self.data['timestamp']
-      result = {"result": self.data}
-      # Build SSE message
-      eventname = 'periodiclabdata'
-      id = round(timestamp * 1000)
-      data = ujson.dumps(result)
-      self.event.clear()
-      self.Eventosend = 'event: %s\nid: %s\ndata: %s\n\n' % (eventname, id, data)
-      # Send Back lost events
-      if self.sendBack:
-          yield self.lostevents
-          file_name = str(self.userSession) + '.txt'
-          f = open(file_name, "w")
-          f.close()
-          self.sendBack = False
-      try:
-        if not self.is_disconnected:
-          yield self.Eventosend
-        else:
-          file_name = str(self.userSession) + '.txt'
-          f = open(file_name, "a")
-          f.write(self.Eventosend)
-          f.close()
-      except:
-        file_name = str(self.userSession) + '.txt'
-        f = open(file_name, "a")
-        f.write(self.Eventosend)
-        f.close()
-        print("User{} disconnected".format(self.userID))
-        print("User's sessionID :" + self.userSession)
-        self.is_disconnected = True
