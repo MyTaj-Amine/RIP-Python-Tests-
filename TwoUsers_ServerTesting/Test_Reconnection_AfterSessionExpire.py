@@ -34,7 +34,7 @@ class TwoUsersTesting(unittest.TestCase):
             result = events.is_displayed()
             if i == 1:
                 try:
-                    time.sleep(32)
+                    time.sleep(33)
                     driver.set_page_load_timeout(1)
                     driver.refresh()
                 except Exception:
